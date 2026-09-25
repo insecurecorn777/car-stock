@@ -45,6 +45,11 @@ h1 {
     margin-top: 10px;
 }
 
+.row button {
+    flex: 1;
+    font-weight: 600;
+}
+
 button {
     border: none;
     border-radius: 12px;
@@ -277,114 +282,3 @@ function addProduct() {
 
     closeModal();
     saveInventory();
-}
-
-function editProduct(id) {
-
-    const item =
-        inventory.find(i => i.id === id);
-
-    document.getElementById("modalContainer").innerHTML = `
-        <div class="modal-overlay">
-            <div class="modal">
-
-                <h2>Edit Product</h2>
-
-                <input
-                    id="editName"
-                    value="${item.name}">
-
-                <input
-                    id="editQty"
-                    type="number"
-                    value="${item.quantity}">
-
-                <button class="blue"
-                    onclick="saveEdit(${id})">
-                    Save
-                </button>
-
-                <button onclick="closeModal()">
-                    Cancel
-                </button>
-
-            </div>
-        </div>
-    `;
-}
-
-function saveEdit(id) {
-
-    const name =
-        document.getElementById("editName").value.trim();
-
-    const qty =
-        parseInt(
-            document.getElementById("editQty").value
-        ) || 0;
-
-    inventory = inventory.map(item => {
-
-        if (item.id === id) {
-
-            item.name = name;
-            item.quantity = qty;
-
-        }
-
-        return item;
-    });
-
-    closeModal();
-    saveInventory();
-}
-
-function deleteProduct(id) {
-
-    const item =
-        inventory.find(i => i.id === id);
-
-    document.getElementById("modalContainer").innerHTML = `
-        <div class="modal-overlay">
-            <div class="modal">
-
-                <h2>Delete Product</h2>
-
-                <p>
-                    Are you sure you want to delete
-                    <strong>${item.name}</strong>?
-                </p>
-
-                <button class="red"
-                    onclick="confirmDelete(${id})">
-                    Delete
-                </button>
-
-                <button onclick="closeModal()">
-                    Cancel
-                </button>
-
-            </div>
-        </div>
-    `;
-}
-
-function confirmDelete(id) {
-
-    inventory =
-        inventory.filter(item => item.id !== id);
-
-    closeModal();
-    saveInventory();
-}
-
-function closeModal() {
-    document.getElementById("modalContainer").innerHTML = "";
-}
-
-renderInventory();
-
-</script>
-
-</body>
-</html>
