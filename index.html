@@ -84,11 +84,11 @@ button {
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0,0,0,.4);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 999;
+    z-index: 1000;
 }
 
 .modal {
@@ -109,13 +109,14 @@ input {
 }
 </style>
 </head>
+
 <body>
 
 <h1>Inventory Manager</h1>
 
 <div id="inventoryList"></div>
 
-<button class="fab" onclick="openAddModal()">
+<button class="fab" id="openAddBtn">
     + Add Product
 </button>
 
@@ -125,10 +126,9 @@ input {
 
 const STORAGE_KEY = "inventory-manager-data";
 
-let inventory =
-    JSON.parse(
-        localStorage.getItem(STORAGE_KEY) || "[]"
-    );
+let inventory = JSON.parse(
+    localStorage.getItem(STORAGE_KEY) || "[]"
+);
 
 function saveInventory() {
     localStorage.setItem(
@@ -137,6 +137,10 @@ function saveInventory() {
     );
 
     renderInventory();
+}
+
+function closeModal() {
+    document.getElementById("modalContainer").innerHTML = "";
 }
 
 function renderInventory() {
@@ -164,24 +168,24 @@ function renderInventory() {
 
             <div class="row">
                 <button class="gray"
-                    onclick="changeQty(${item.id},1)">
+                    data-plus="${item.id}">
                     +1
                 </button>
 
                 <button class="gray"
-                    onclick="changeQty(${item.id},-1)">
+                    data-minus="${item.id}">
                     -1
                 </button>
             </div>
 
             <div class="row">
                 <button class="blue"
-                    onclick="openEditModal(${item.id})">
+                    data-edit="${item.id}">
                     Edit
                 </button>
 
                 <button class="red"
-                    onclick="openDeleteModal(${item.id})">
+                    data-delete="${item.id}">
                     Delete
                 </button>
             </div>
@@ -189,10 +193,30 @@ function renderInventory() {
 
         list.appendChild(card);
     });
-}
 
-function closeModal() {
-    document.getElementById("modalContainer").innerHTML = "";
+    document.querySelectorAll("[data-plus]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            changeQty(Number(btn.dataset.plus), 1);
+        });
+    });
+
+    document.querySelectorAll("[data-minus]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            changeQty(Number(btn.dataset.minus), -1);
+        });
+    });
+
+    document.querySelectorAll("[data-edit]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            openEditModal(Number(btn.dataset.edit));
+        });
+    });
+
+    document.querySelectorAll("[data-delete]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            openDeleteModal(Number(btn.dataset.delete));
+        });
+    });
 }
 
 function openAddModal() {
@@ -203,36 +227,51 @@ function openAddModal() {
 
                 <h2>Add Product</h2>
 
-                <input id="productName"
+                <input
+                    id="productName"
                     placeholder="Product Name">
 
-                <input id="productQty"
+                <input
+                    id="productQty"
                     type="number"
                     placeholder="Starting Quantity">
 
-                <button class="blue"
-                    onclick="addProduct()">
+                <button
+                    class="blue"
+                    id="addProductBtn">
                     Add Product
                 </button>
 
-                <button onclick="closeModal()">
+                <button
+                    id="cancelBtn">
                     Cancel
                 </button>
 
             </div>
         </div>
     `;
+
+    document
+        .getElementById("addProductBtn")
+        .addEventListener("click", addProduct);
+
+    document
+        .getElementById("cancelBtn")
+        .addEventListener("click", closeModal);
 }
 
 function addProduct() {
 
     const name =
-        document.getElementById("productName").value.trim();
+        document.getElementById("productName")
+        .value
+        .trim();
 
     const qty =
         parseInt(
-            document.getElementById("productQty").value
-        ) || 0;
+            document.getElementById("productQty")
+            .value || "0"
+        );
 
     if (!name) {
         alert("Please enter a product name.");
@@ -242,7 +281,7 @@ function addProduct() {
     inventory.push({
         id: Date.now(),
         name: name,
-        quantity: qty
+        quantity: isNaN(qty) ? 0 : qty
     });
 
     saveInventory();
@@ -260,31 +299,45 @@ function openEditModal(id) {
 
                 <h2>Edit Product</h2>
 
-                <input id="editName"
+                <input
+                    id="editName"
                     value="${item.name}">
 
-                <input id="editQty"
+                <input
+                    id="editQty"
                     type="number"
                     value="${item.quantity}">
 
-                <button class="blue"
-                    onclick="saveEdit(${id})">
+                <button
+                    class="blue"
+                    id="saveEditBtn">
                     Save
                 </button>
 
-                <button onclick="closeModal()">
+                <button
+                    id="cancelEditBtn">
                     Cancel
                 </button>
 
             </div>
         </div>
     `;
+
+    document
+        .getElementById("saveEditBtn")
+        .addEventListener("click", () => {
+            saveEdit(id);
+        });
+
+    document
+        .getElementById("cancelEditBtn")
+        .addEventListener("click", closeModal);
 }
 
 function saveEdit(id) {
 
     const name =
-        document.getElementById("editName").value.trim();
+        document.getElementById("editName").value;
 
     const qty =
         parseInt(
@@ -317,22 +370,33 @@ function openDeleteModal(id) {
                 <h2>Delete Product</h2>
 
                 <p>
-                    Are you sure you want to delete
-                    <strong>${item.name}</strong>?
+                    Delete <strong>${item.name}</strong>?
                 </p>
 
-                <button class="red"
-                    onclick="confirmDelete(${id})">
+                <button
+                    class="red"
+                    id="confirmDeleteBtn">
                     Delete
                 </button>
 
-                <button onclick="closeModal()">
+                <button
+                    id="cancelDeleteBtn">
                     Cancel
                 </button>
 
             </div>
         </div>
     `;
+
+    document
+        .getElementById("confirmDeleteBtn")
+        .addEventListener("click", () => {
+            confirmDelete(id);
+        });
+
+    document
+        .getElementById("cancelDeleteBtn")
+        .addEventListener("click", closeModal);
 }
 
 function confirmDelete(id) {
@@ -348,22 +412,27 @@ function confirmDelete(id) {
 
 function changeQty(id, amount) {
 
-    inventory = inventory.map(item => {
+    inventory =
+        inventory.map(item => {
 
-        if (item.id === id) {
+            if (item.id === id) {
 
-            item.quantity += amount;
+                item.quantity += amount;
 
-            if (item.quantity < 0) {
-                item.quantity = 0;
+                if (item.quantity < 0) {
+                    item.quantity = 0;
+                }
             }
-        }
 
-        return item;
-    });
+            return item;
+        });
 
     saveInventory();
 }
+
+document
+    .getElementById("openAddBtn")
+    .addEventListener("click", openAddModal);
 
 renderInventory();
 
