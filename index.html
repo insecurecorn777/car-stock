@@ -12,9 +12,9 @@
 
 body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #f2f2f7;
     padding: 15px;
+    background: #f2f2f7;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 h1 {
@@ -23,9 +23,9 @@ h1 {
 
 .card {
     background: white;
+    border-radius: 16px;
     padding: 15px;
     margin-bottom: 12px;
-    border-radius: 16px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
@@ -35,8 +35,8 @@ h1 {
 }
 
 .quantity {
-    color: #666;
     margin-top: 4px;
+    color: #666;
 }
 
 .row {
@@ -47,14 +47,14 @@ h1 {
 
 .row button {
     flex: 1;
-    font-weight: 600;
 }
 
 button {
     border: none;
     border-radius: 12px;
-    padding: 12px;
+    padding: 14px;
     font-size: 15px;
+    font-weight: 600;
     cursor: pointer;
 }
 
@@ -79,23 +79,22 @@ button {
     bottom: 20px;
     background: #007aff;
     color: white;
-    font-weight: 600;
 }
 
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,.4);
+    background: rgba(0,0,0,0.4);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 999;
 }
 
 .modal {
-    background: white;
     width: 90%;
     max-width: 400px;
+    background: white;
     border-radius: 20px;
     padding: 20px;
 }
@@ -103,14 +102,13 @@ button {
 input {
     width: 100%;
     padding: 12px;
+    margin-bottom: 10px;
     border-radius: 12px;
     border: 1px solid #ccc;
-    margin-bottom: 10px;
     font-size: 16px;
 }
 </style>
 </head>
-
 <body>
 
 <h1>Inventory Manager</h1>
@@ -127,20 +125,12 @@ input {
 
 const STORAGE_KEY = "inventory-manager-data";
 
-function loadInventory() {
-    try {
-        return JSON.parse(
-            localStorage.getItem(STORAGE_KEY)
-        ) || [];
-    } catch (e) {
-        return [];
-    }
-}
-
-let inventory = loadInventory();
+let inventory =
+    JSON.parse(
+        localStorage.getItem(STORAGE_KEY) || "[]"
+    );
 
 function saveInventory() {
-
     localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify(inventory)
@@ -148,15 +138,6 @@ function saveInventory() {
 
     renderInventory();
 }
-
-window.addEventListener("beforeunload", () => {
-
-    localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(inventory)
-    );
-
-});
 
 function renderInventory() {
 
@@ -167,7 +148,8 @@ function renderInventory() {
 
     inventory.forEach(item => {
 
-        const card = document.createElement("div");
+        const card =
+            document.createElement("div");
 
         card.className = "card";
 
@@ -182,24 +164,24 @@ function renderInventory() {
 
             <div class="row">
                 <button class="gray"
-                    onclick="updateQuantity(${item.id},1)">
+                    onclick="changeQty(${item.id},1)">
                     +1
                 </button>
 
                 <button class="gray"
-                    onclick="updateQuantity(${item.id},-1)">
+                    onclick="changeQty(${item.id},-1)">
                     -1
                 </button>
             </div>
 
             <div class="row">
                 <button class="blue"
-                    onclick="editProduct(${item.id})">
+                    onclick="openEditModal(${item.id})">
                     Edit
                 </button>
 
                 <button class="red"
-                    onclick="deleteProduct(${item.id})">
+                    onclick="openDeleteModal(${item.id})">
                     Delete
                 </button>
             </div>
@@ -209,23 +191,8 @@ function renderInventory() {
     });
 }
 
-function updateQuantity(id, amount) {
-
-    inventory = inventory.map(item => {
-
-        if (item.id === id) {
-
-            item.quantity += amount;
-
-            if (item.quantity < 0) {
-                item.quantity = 0;
-            }
-        }
-
-        return item;
-    });
-
-    saveInventory();
+function closeModal() {
+    document.getElementById("modalContainer").innerHTML = "";
 }
 
 function openAddModal() {
@@ -236,12 +203,10 @@ function openAddModal() {
 
                 <h2>Add Product</h2>
 
-                <input
-                    id="productName"
+                <input id="productName"
                     placeholder="Product Name">
 
-                <input
-                    id="productQty"
+                <input id="productQty"
                     type="number"
                     placeholder="Starting Quantity">
 
@@ -250,8 +215,7 @@ function openAddModal() {
                     Add Product
                 </button>
 
-                <button
-                    onclick="closeModal()">
+                <button onclick="closeModal()">
                     Cancel
                 </button>
 
@@ -271,6 +235,7 @@ function addProduct() {
         ) || 0;
 
     if (!name) {
+        alert("Please enter a product name.");
         return;
     }
 
@@ -280,5 +245,129 @@ function addProduct() {
         quantity: qty
     });
 
-    closeModal();
     saveInventory();
+    closeModal();
+}
+
+function openEditModal(id) {
+
+    const item =
+        inventory.find(i => i.id === id);
+
+    document.getElementById("modalContainer").innerHTML = `
+        <div class="modal-overlay">
+            <div class="modal">
+
+                <h2>Edit Product</h2>
+
+                <input id="editName"
+                    value="${item.name}">
+
+                <input id="editQty"
+                    type="number"
+                    value="${item.quantity}">
+
+                <button class="blue"
+                    onclick="saveEdit(${id})">
+                    Save
+                </button>
+
+                <button onclick="closeModal()">
+                    Cancel
+                </button>
+
+            </div>
+        </div>
+    `;
+}
+
+function saveEdit(id) {
+
+    const name =
+        document.getElementById("editName").value.trim();
+
+    const qty =
+        parseInt(
+            document.getElementById("editQty").value
+        ) || 0;
+
+    inventory = inventory.map(item => {
+
+        if (item.id === id) {
+            item.name = name;
+            item.quantity = qty;
+        }
+
+        return item;
+    });
+
+    saveInventory();
+    closeModal();
+}
+
+function openDeleteModal(id) {
+
+    const item =
+        inventory.find(i => i.id === id);
+
+    document.getElementById("modalContainer").innerHTML = `
+        <div class="modal-overlay">
+            <div class="modal">
+
+                <h2>Delete Product</h2>
+
+                <p>
+                    Are you sure you want to delete
+                    <strong>${item.name}</strong>?
+                </p>
+
+                <button class="red"
+                    onclick="confirmDelete(${id})">
+                    Delete
+                </button>
+
+                <button onclick="closeModal()">
+                    Cancel
+                </button>
+
+            </div>
+        </div>
+    `;
+}
+
+function confirmDelete(id) {
+
+    inventory =
+        inventory.filter(
+            item => item.id !== id
+        );
+
+    saveInventory();
+    closeModal();
+}
+
+function changeQty(id, amount) {
+
+    inventory = inventory.map(item => {
+
+        if (item.id === id) {
+
+            item.quantity += amount;
+
+            if (item.quantity < 0) {
+                item.quantity = 0;
+            }
+        }
+
+        return item;
+    });
+
+    saveInventory();
+}
+
+renderInventory();
+
+</script>
+
+</body>
+</html>
